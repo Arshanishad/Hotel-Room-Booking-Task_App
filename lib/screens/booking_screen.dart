@@ -1513,6 +1513,7 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
               ),
             ],
           ),
+          
           const Divider(height: 18, color: Color(0xFFDDE2E7)),
           _priceRow(
             'Price / Night',
