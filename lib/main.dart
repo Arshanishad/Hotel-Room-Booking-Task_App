@@ -12,7 +12,7 @@ class GrandPmsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'GrandPMS',
+      title: 'Hotel Room Booking',
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Arial',
