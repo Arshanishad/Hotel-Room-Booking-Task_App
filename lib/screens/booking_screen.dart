@@ -53,7 +53,7 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
     text: 'rajsharma@example.in',
   );
 
-  // Sample room data provided by Raintech Software Limited.
+
   final List<Room> rooms = const [
     Room(
       code: 'R101',
@@ -142,8 +142,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
     return checkOut!.isAfter(checkIn!);
   }
 
-  // Uses UTC date-only values so the calculation is based purely
-  // on calendar dates and not time/DST differences.
   int _daysBetween(DateTime start, DateTime end) {
     final startDate = DateTime.utc(start.year, start.month, start.day);
 
@@ -185,7 +183,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
   Future<void> selectDate({required bool isCheckIn}) async {
     final minimumDate = today;
 
-    // Check-out cannot be selected before check-in.
     if (!isCheckIn && checkIn == null) {
       setState(() {
         dateError = 'Please select a check-in date first.';
@@ -219,8 +216,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
 
     final firstDate = isCheckIn ? minimumDate : minimumCheckoutDate!;
 
-    // Allow dates far enough into the future instead of
-    // hardcoding 2030.
     final lastDate = DateTime(
       minimumDate.year + 10,
       minimumDate.month,
@@ -251,9 +246,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
 
       if (isCheckIn) {
         checkIn = picked;
-
-        // Existing checkout becomes invalid if it is
-        // on or before the new check-in date.
         if (checkOut != null && !checkOut!.isAfter(checkIn!)) {
           checkOut = null;
           dateError = 'Check-out date must be after check-in date.';
@@ -282,7 +274,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
 
     final currentDate = today;
 
-    // Date validation.
     if (checkIn == null) {
       newDateError = 'Please select a check-in date.';
     } else if (checkIn!.isBefore(currentDate)) {
@@ -293,7 +284,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
       newDateError = 'Check-out date must be after check-in date.';
     }
 
-    // Room validation.
     if (selectedRoomIndex == null) {
       newRoomError = 'Please select a room.';
     }
@@ -1513,7 +1503,7 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
               ),
             ],
           ),
-          
+
           const Divider(height: 18, color: Color(0xFFDDE2E7)),
           _priceRow(
             'Price / Night',
