@@ -35,8 +35,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
 
   int? selectedRoomIndex;
 
-  String? dateError;
-  String? roomError;
   String formatCurrentDate() {
     return formatDate(today);
   }
@@ -52,7 +50,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
   final TextEditingController emailController = TextEditingController(
     text: 'rajsharma@example.in',
   );
-
 
   final List<Room> rooms = const [
     Room(
@@ -184,9 +181,9 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
     final minimumDate = today;
 
     if (!isCheckIn && checkIn == null) {
-      setState(() {
-        dateError = 'Please select a check-in date first.';
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a check-in date first.')),
+      );
       return;
     }
 
@@ -242,58 +239,162 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
     }
 
     setState(() {
-      dateError = null;
-
       if (isCheckIn) {
         checkIn = picked;
         if (checkOut != null && !checkOut!.isAfter(checkIn!)) {
           checkOut = null;
-          dateError = 'Check-out date must be after check-in date.';
         }
       } else {
         if (checkIn == null) {
-          dateError = 'Please select a check-in date first.';
           return;
         }
 
         if (!picked.isAfter(checkIn!)) {
-          checkOut = null;
-          dateError = 'Check-out date must be after check-in date.';
           return;
         }
 
         checkOut = picked;
-        dateError = null;
       }
     });
   }
 
-  bool validateBooking() {
-    String? newDateError;
-    String? newRoomError;
+  List<String> validateBooking() {
+    final errors = <String>[];
 
     final currentDate = today;
 
     if (checkIn == null) {
-      newDateError = 'Please select a check-in date.';
+      errors.add('Please select a check-in date.');
     } else if (checkIn!.isBefore(currentDate)) {
-      newDateError = 'Check-in date cannot be in the past.';
-    } else if (checkOut == null) {
-      newDateError = 'Please select a check-out date.';
-    } else if (!checkOut!.isAfter(checkIn!)) {
-      newDateError = 'Check-out date must be after check-in date.';
+      errors.add('Check-in date cannot be in the past.');
+    }
+
+    if (checkOut == null) {
+      errors.add('Please select a check-out date.');
+    } else if (checkIn != null && !checkOut!.isAfter(checkIn!)) {
+      errors.add('Check-out date must be after check-in date.');
     }
 
     if (selectedRoomIndex == null) {
-      newRoomError = 'Please select a room.';
+      errors.add('Please select a room.');
     }
 
-    setState(() {
-      dateError = newDateError;
-      roomError = newRoomError;
-    });
+    return errors;
+  }
 
-    return newDateError == null && newRoomError == null;
+  void _showValidationDialog(List<String> errors) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 30),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEEEE),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFD92D20)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Color(0xFFD92D20),
+                    size: 42,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    'Validation Error',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFB42318),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    'Please fix the following before booking:',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF35485A),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  ...errors.map(
+                    (error) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 5),
+                            child: Icon(
+                              Icons.circle,
+                              size: 6,
+                              color: Color(0xFFD92D20),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              error,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF35485A),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD92D20),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text(
+                        'OK',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void selectRoom(int index) {
@@ -303,7 +404,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
 
     setState(() {
       selectedRoomIndex = index;
-      roomError = null;
     });
   }
 
@@ -311,9 +411,9 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
     setState(() {
       checkIn = null;
       checkOut = null;
+      checkInTime = null;
+      checkOutTime = null;
       selectedRoomIndex = null;
-      dateError = null;
-      roomError = null;
     });
   }
 
@@ -528,7 +628,9 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
       child: Row(
         children: [
           const Icon(Icons.hotel, size: 21, color: Color(0xFF092C50)),
+
           const SizedBox(width: 6),
+
           const Text(
             'GrandPMS',
             style: TextStyle(
@@ -537,15 +639,33 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
               color: Color(0xFF092C50),
             ),
           ),
+
           const Spacer(),
-          _systemStatus(),
+
+          _systemStatusMobile(),
+
           const SizedBox(width: 8),
+
           const CircleAvatar(
             radius: 14,
             backgroundColor: Color(0xFF092C50),
             child: Icon(Icons.person, color: Colors.white, size: 16),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _systemStatusMobile() {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9FAF2),
+        shape: BoxShape.circle,
+      ),
+      child: const Center(
+        child: Icon(Icons.circle, size: 7, color: Color(0xFF139C67)),
       ),
     );
   }
@@ -739,7 +859,10 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
                 topRight: Radius.circular(4),
               ),
             ),
-            child: Row(
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 const Icon(
                   Icons.calendar_month_outlined,
@@ -764,7 +887,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
                     color: Colors.white,
                   ),
                 ),
-                const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -828,10 +950,7 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
               );
             },
           ),
-          if (dateError != null) ...[
-            const SizedBox(height: 9),
-            _errorMessage(dateError!),
-          ],
+
           const SizedBox(height: 9),
           if (isDateRangeValid)
             Container(
@@ -871,9 +990,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
             spacing: 18,
             runSpacing: 5,
             children: [
-              // const _InfoBullet(
-              //   text: 'Check-in time 14:00',
-              // ),
               GestureDetector(
                 onTap: () => _selectTime(isCheckIn: false),
                 child: _InfoBullet(
@@ -881,9 +997,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
                       'Check-out time ${checkOutTime?.format(context) ?? 'Select time'}',
                 ),
               ),
-              // const _InfoBullet(
-              //   text: 'Check-out time 11:00',
-              // ),
               GestureDetector(
                 onTap: () => _selectTime(isCheckIn: true),
                 child: _InfoBullet(
@@ -961,35 +1074,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
     );
   }
 
-  Widget _errorMessage(String message) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1F1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: const Color(0xFFF2CACA)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.error_outline, size: 15, color: Color(0xFFC0392B)),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFFC0392B),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildAvailableRoomsCard() {
     return _sectionCard(
       child: Column(
@@ -1004,10 +1088,6 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
           _buildRoomImageCards(),
           const SizedBox(height: 13),
           _buildRoomTable(),
-          if (roomError != null) ...[
-            const SizedBox(height: 8),
-            _errorMessage(roomError!),
-          ],
         ],
       ),
     );
@@ -1633,34 +1713,112 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
           height: 38,
           child: ElevatedButton.icon(
             onPressed: () {
-              final isValid = validateBooking();
+              final errors = validateBooking();
 
-              if (!isValid) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Please fix the validation '
-                      'errors before booking.',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ),
-                );
-
+              if (errors.isNotEmpty) {
+                _showValidationDialog(errors);
                 return;
               }
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) {
+                  return Center(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 30),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE4FAF0),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF0E9C63)),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Color(0xFF0E9C63),
+                              size: 42,
+                            ),
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Booking confirmed: '
-                    '${selectedRoom!.code} '
-                    'for $nights nights '
-                    '(${formatMoney(total)})',
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ),
+                            const SizedBox(height: 10),
+
+                            const Text(
+                              'Booking Confirmed',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF08764B),
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              '${selectedRoom!.code} • '
+                              '$nights nights • '
+                              '${formatMoney(total)}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF35485A),
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            const Text(
+                              'Reservation successfully created.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF687581),
+                              ),
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0E9C63),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'OK',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               );
             },
+
             icon: const Icon(Icons.lock_outline, size: 14),
             label: Text(
               'Confirm Booking '
@@ -1753,7 +1911,10 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
   }) {
     return Padding(
       padding: const EdgeInsets.all(10),
-      child: Row(
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 6,
         children: [
           Container(
             width: 19,
@@ -1773,7 +1934,7 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
               ),
             ),
           ),
-          const SizedBox(width: 6),
+
           Text(
             title,
             style: const TextStyle(
@@ -1782,7 +1943,7 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
               color: Color(0xFF314A60),
             ),
           ),
-          const Spacer(),
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
             decoration: BoxDecoration(
@@ -1806,11 +1967,17 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
   Widget _buildFooter() {
     return Row(
       children: [
-        const Text(
-          'GrandPMS Room Booking Engine v4.5',
-          style: TextStyle(fontSize: 9, color: Color(0xFF8A949D)),
+        Expanded(
+          child: Text(
+            'GrandPMS Room Booking Engine v4.5',
+            style: const TextStyle(fontSize: 9, color: Color(0xFF8A949D)),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ),
-        const Spacer(),
+
+        const SizedBox(width: 8),
+
         Container(
           width: 6,
           height: 6,
@@ -1819,10 +1986,17 @@ class _HotelRoomBookingPageState extends State<HotelRoomBookingPage> {
             color: Color(0xFF0E9C63),
           ),
         ),
+
         const SizedBox(width: 5),
-        const Text(
-          '4 of 5 units free for dispatch',
-          style: TextStyle(fontSize: 9, color: Color(0xFF7A8792)),
+
+        Flexible(
+          child: Text(
+            '4 of 5 units free for dispatch',
+            style: const TextStyle(fontSize: 9, color: Color(0xFF7A8792)),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.right,
+          ),
         ),
       ],
     );
@@ -1857,37 +2031,3 @@ const TextStyle _tableHeaderStyle = TextStyle(
   color: Color(0xFF7B8792),
 );
 
-class _MiniChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF15966A)
-      ..strokeWidth = 1.6
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-
-    path.moveTo(0, size.height * .72);
-
-    path.lineTo(size.width * .14, size.height * .55);
-
-    path.lineTo(size.width * .28, size.height * .63);
-
-    path.lineTo(size.width * .42, size.height * .30);
-
-    path.lineTo(size.width * .55, size.height * .42);
-
-    path.lineTo(size.width * .68, size.height * .15);
-
-    path.lineTo(size.width * .83, size.height * .35);
-
-    path.lineTo(size.width, size.height * .08);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-}
